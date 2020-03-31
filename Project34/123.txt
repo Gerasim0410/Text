@@ -1,0 +1,35 @@
+Section 1
+{
+Chapter 1
+{
+Line 1
+Line 2
+}
+Chapter 2
+{
+Line 1
+{
+Line 1.1
+{
+Line 1.1.1
+}
+}
+Line 2
+Line 3
+}
+}
+Section 2
+{
+Line 1
+}
+Section 3
+Section 4
+{
+Line 1
+{
+Line 1.1
+{
+Line 1.1.1
+}
+}
+}
