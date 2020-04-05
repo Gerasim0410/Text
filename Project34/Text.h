@@ -13,7 +13,7 @@ class TTextLink
 {
 public:
 	TTextLink *pNext, *pDown;
-	char str[100];
+	char str[81];
 	TTextLink(const char *_str = NULL, TTextLink *_pNext = NULL, TTextLink *_pDown = NULL) {
 		pNext = _pNext;
 		pDown = _pDown;
@@ -202,14 +202,7 @@ TTextLink* TText::ReadRec(ifstream& ifs) {
 			p->pDown = ReadRec(ifs); 	
 		}
 		else {
-			string s;
-			int n = Stack.getsize();
-			for (int i = 0; i <= n; i++) {
-				s += ' ';
-			}
-			s += _str;
-			const char *st = s.c_str();
-			TTextLink *tmp = new TTextLink(st);
+			TTextLink *tmp = new TTextLink(_str);
 			if (!pHead) pHead = p = tmp;
 			else {
 				p->pNext = tmp;
@@ -229,9 +222,17 @@ void TText::Read(string f_name){
 
 void TText::PrintSection(TTextLink *p){
 	if (p){
-		cout << p->str << endl;
+		string s;
+		int n = Stack.getsize();
+		for (int i = 0; i <= n; i++) {
+			s += '	';
+		}
+		s += p->str;
+		cout << s << endl;
 		if (p->pDown){
+			Stack.Push(p);
 			PrintSection(p->pDown);
+			Stack.Pop();
 		}
 		if (p->pNext) PrintSection(p->pNext);
 	}
