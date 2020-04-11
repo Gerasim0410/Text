@@ -4,11 +4,11 @@
 #include <fstream>
 using namespace std;
 
+TTextMem TTextLink::MemHeader;
 
-void main()
-{
-	try
-	{
+void main(){
+	TTextLink::InitMem(100);
+	try{
 		TText t;
 		string str;
 		int n;
@@ -16,26 +16,25 @@ void main()
 		cout << "Operation number:" << endl;
 		cout << "1. Print text on console" << endl;
 		cout << "2. Load new text" << endl;
-		cout << "3. Add a line to this level" << endl;
-		cout << "4. Add a line to down level" << endl;
-		cout << "5. Add a section to this level" << endl;
-		cout << "6. Add a section to down level" << endl;
-		cout << "7. Delete line from this level" << endl;
-		cout << "8. Delete line from down level" << endl;
-		cout << "9. Delete section from this level" << endl;
-		cout << "10. Delete section from down level" << endl;
-		cout << "11. Print current line" << endl;
-		cout << "12. Edit current line" << endl;
-		cout << "13. Go to First" << endl;
-		cout << "14. Go to Next" << endl;
-		cout << "15. Go to Down" << endl;
-		cout << "16. Go to Prev" << endl;
+		cout << "3. Go to First" << endl;
+		cout << "4. Go to Next" << endl;
+		cout << "5. Go to Down" << endl;
+		cout << "6. Go to Prev" << endl;
+		cout << "7. Add a line to this level" << endl;
+		cout << "8. Add a line to down level" << endl;
+		cout << "9. Add a section to this level" << endl;
+		cout << "10. Add a section to down level" << endl;
+		cout << "11. Delete line from this level" << endl;
+		cout << "12. Delete line from down level" << endl;
+		cout << "13. Delete section from this level" << endl;
+		cout << "14. Delete section from down level" << endl;
+		cout << "15. Print current line" << endl;
+		cout << "16. Edit current line" << endl;
 		cout << "17. Save text to file" << endl;
 		cout << "18. Exit" << endl;
 		do{
 			cin >> n;
-			switch (n)
-			{
+			switch (n){
 			case 1: 
 				cout << endl;
 				t.PrintText();
@@ -48,31 +47,19 @@ void main()
 				break;
 
 			case 3: 
-				cout << "Text: " << endl;
-				cin >> str;
-				t.InsNextLine(str);
-				cout << endl;
+				t.GoFirstLink();
 				break;
 
 			case 4: 
-				cout << "Text: " << endl;
-				cin >> str;
-				t.InsDownLine(str);
-				cout << endl;
+				t.GoNextLink();
 				break;
 
 			case 5: 
-				cout << "Text: " << endl;
-				cin >> str;
-				t.InsNextSection(str);
-				cout << endl;
+				t.GoDownLink();
 				break;
 
 			case 6: 
-				cout << "Text: " << endl;
-				cin >> str;
-				t.InsDownSection(str);
-				cout << endl;
+				t.GoPrevLink();
 				break;
 
 			case 7:
@@ -107,19 +94,31 @@ void main()
 				break;
 
 			case 13: 
-				t.GoFirstLink();
+				cout << "Text: " << endl;
+				cin >> str;
+				t.InsNextLine(str);
+				cout << endl;
 				break;
 
 			case 14: 
-				t.GoNextLink();
+				cout << "Text: " << endl;
+				cin >> str;
+				t.InsDownLine(str);
+				cout << endl;
 				break;
 
 			case 15: 
-				t.GoDownLink();
+				cout << "Text: " << endl;
+				cin >> str;
+				t.InsNextSection(str);
+				cout << endl;
 				break;
 
 			case 16: 
-				t.GoPrevLink();
+				cout << "Text: " << endl;
+				cin >> str;
+				t.InsDownSection(str);
+				cout << endl;
 				break;
 
 			case 17: 
@@ -135,8 +134,8 @@ void main()
 			cout << endl;
 		} while (n != 18);
 	}
-	catch (int n)
-	{
+
+	catch (int n){
 		cout << "exception " << n << endl;
 	}
 }
