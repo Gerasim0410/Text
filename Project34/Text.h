@@ -7,12 +7,18 @@
 
 using namespace std;
 
+class TTextLink;
+class TText;
 
+class TTextMem{
+	TTextLink *pFirst, *pLast, *pFree;
+	friend class TTextLink;
+};
 
-class TTextLink
-{
+class TTextLink{
 public:
 	TTextLink *pNext, *pDown;
+	static TTextMem MemHeader;
 	char str[81];
 	TTextLink(const char *_str = NULL, TTextLink *_pNext = NULL, TTextLink *_pDown = NULL) {
 		pNext = _pNext;
@@ -22,11 +28,61 @@ public:
 			strcpy_s(str, _str);
 	}
 	~TTextLink() {}
+
+	static void InitMem(int size){
+		MemHeader.pFirst = (TTextLink*) new char[size * sizeof(TTextLink)];
+		MemHeader.pFree = MemHeader.pFirst;
+		MemHeader.pLast = MemHeader.pFirst + (size - 1);
+		TTextLink *tmp = MemHeader.pFirst;
+		for (int i = 0; i < size - 1; i++, tmp++){
+			tmp->str[0] = '\0';
+			tmp->pNext = tmp + 1;
+		}
+		tmp->str[0] = '\0';
+		tmp->pNext = NULL;
+	}
+
+	void* operator new(size_t size){
+		TTextLink *tmp = MemHeader.pFree;
+		if (tmp)
+			MemHeader.pFree = tmp->pNext;
+		return tmp;
+	}
+
+	void operator delete(void* p){
+		TTextLink *tmp = (TTextLink*)p;
+		tmp->pNext = MemHeader.pFree;
+		MemHeader.pFree = tmp;
+	}
+
+	static void TTextLink::MemCleaner(TText &txt);
+
+	static void PrintFree(){
+		TTextLink *tmp = MemHeader.pFree;
+		if (!tmp)
+			cout << "No free" << endl;
+		else{
+			int count = 0;
+			cout << "Free lines:" << endl;
+			while (tmp){
+				if (tmp->str[0] != '\0')
+					cout << tmp->str << endl;
+				tmp = tmp->pNext;
+				count++;
+			}
+			cout << count << endl;
+		}
+	}
+
+	int IsAtom(){
+		return pDown == NULL;
+	}
+
 };
 
 
-class TText
-{
+
+class TText{
 private:
 	TTextLink *pFirst, *pCurr;
 	TStack <TTextLink*> Stack;
@@ -46,12 +102,13 @@ public:
 	void DelDownSection();	           
 	void DelNextLine();	            
 	void DelNextSection();		  	    
-	void Read(string f_name);       
-	void SaveText(string f_name);       
+	void Read(string ifs);       
+	void SaveText(string ifs);       
 	TTextLink* ReadRec(ifstream& ifs);  
 	void SaveSection(TTextLink *p, ofstream& ofs);  
 	void PrintSection(TTextLink *p);    
-	void PrintText();                  
+	void PrintText(); 
+
 	int Reset(void) {
 		while (!Stack.IsEmpty()) Stack.Pop();
 		pCurr = pFirst;
@@ -91,27 +148,27 @@ void TText::GoFirstLink(){
 }
 
 void TText::GoNextLink(){
-	if (!pCurr) throw - 1;
+	if (!pCurr) throw 1;
 	if (!pCurr->pNext) return;
 	Stack.Push(pCurr);
 	pCurr = pCurr->pNext;
 }
 
 void TText::GoDownLink(){
-	if (!pCurr) throw - 1;
+	if (!pCurr) throw 2;
 	if (!pCurr->pDown) return;
 	Stack.Push(pCurr);
 	pCurr = pCurr->pDown;
 }
 
 void TText::GoPrevLink(){
-	if (!pCurr ) throw - 1;
+	if (!pCurr ) throw 3;
 	if (Stack.IsEmpty()) return;
 	pCurr = Stack.Pop();
 }
 
 void TText::SetLine(string str1){
-	if (!pCurr) throw - 1;
+	if (!pCurr) throw 4;
 	strcpy_s(pCurr->str, str1.c_str());
 }
 
@@ -119,9 +176,8 @@ string TText::GetLine(){
 	return string(pCurr->str);
 }
 
-
 void TText::InsNextLine(string str1) {
-	if (!pCurr) throw - 1;
+	if (!pCurr) throw 5;
 	TTextLink *p = new TTextLink(str1.c_str());
 	p->pNext = pCurr->pNext;
 	pCurr->pNext = p;
@@ -213,10 +269,10 @@ TTextLink* TText::ReadRec(ifstream& ifs) {
 	return pHead;
 }
 
-void TText::Read(string f_name){
-	ifstream ifs(f_name);
+void TText::Read(string ifs){
+	ifstream ifss(ifs);
 	Stack.Clear();
-	pFirst = ReadRec(ifs);
+	pFirst = ReadRec(ifss);
 	pCurr = pFirst;
 }
 
@@ -244,18 +300,32 @@ void TText::SaveSection(TTextLink *p, ofstream& ofs){
 	if (p){
 		ofs << p->str << endl;
 		if (p->pDown){
-			ofs << '{';
+			ofs << '{' << endl;
 			SaveSection(p->pDown, ofs);
-			ofs << '}';
+			ofs << '}' << endl;
 		}
 		if (p->pNext) SaveSection(p->pNext, ofs);
 	}
 }
 
-void TText::SaveText(string f_name){
-	ofstream ofs(f_name);
+void TText::SaveText(string ifs){
+	ofstream ofs(ifs);
 	SaveSection(pFirst, ofs);
 }
 
 
-
+void TTextLink::MemCleaner(TText &txt) {
+	string s = "&&&";
+	for (txt.Reset(); !txt.IsEnd(); txt.GoNext()) {
+		s += txt.GetLine();
+		txt.SetLine(s.c_str());
+	}
+	for (TTextLink *tmp = MemHeader.pFree; tmp; tmp = tmp->pNext) {
+		strcpy_s(tmp->str, "&&&");
+	}
+	for (TTextLink *tmp = MemHeader.pFirst; tmp <= MemHeader.pLast; tmp++) {
+		if (strstr(tmp->str, "&&&"))
+			strcpy_s(tmp->str, tmp->str + 3);
+		else delete tmp;
+	}
+}
