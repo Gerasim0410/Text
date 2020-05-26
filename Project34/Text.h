@@ -34,11 +34,12 @@ public:
 		MemHeader.pFree = MemHeader.pFirst;
 		MemHeader.pLast = MemHeader.pFirst + (size - 1);
 		TTextLink *tmp = MemHeader.pFirst;
-		for (int i = 0; i < size - 1; i++, tmp++){
+		for (int i = 0; i < size - 1; i++){
 			tmp->str[0] = '\0';
 			tmp->pNext = tmp + 1;
+			tmp++;
 		}
-		tmp->str[0] = '\0';
+		MemHeader.pLast->str[0] = '\0';
 		tmp->pNext = NULL;
 	}
 
@@ -55,27 +56,23 @@ public:
 		MemHeader.pFree = tmp;
 	}
 
-	static void TTextLink::MemCleaner(TText &txt);
+	static void TTextLink::MemCleaner(TText &txt, int& c);
 
 	static void PrintFree(){
 		TTextLink *tmp = MemHeader.pFree;
 		if (!tmp)
 			cout << "No free" << endl;
 		else{
-			int count = 0;
+			int c = 0;
 			cout << "Free lines:" << endl;
 			while (tmp){
 				if (tmp->str[0] != '\0')
 					cout << tmp->str << endl;
 				tmp = tmp->pNext;
-				count++;
+				c++;
 			}
-			cout << count << endl;
+			cout << c << endl;
 		}
-	}
-
-	int IsAtom(){
-		return pDown == NULL;
 	}
 
 };
@@ -98,10 +95,8 @@ public:
 	void InsDownSection(string s);	   
 	void InsNextLine(string s);	    
 	void InsNextSection(string s);	  
-	void DelDownLine();		   
-	void DelDownSection();	           
-	void DelNextLine();	            
-	void DelNextSection();		  	    
+	void DelDownLine();		         
+	void DelNextLine();	            	    
 	void Read(string ifs);       
 	void SaveText(string ifs);       
 	TTextLink* ReadRec(ifstream& ifs);  
@@ -209,17 +204,8 @@ void TText::DelDownLine(){
 	if (pCurr)
 		if (pCurr->pDown){
 			TTextLink *p = pCurr->pDown;
-			pCurr->pDown = pCurr->pDown->pNext;
+			pCurr->pDown = p->pNext;
 			delete p;
-		}
-}
-
-void TText::DelDownSection(){
-	if (pCurr)
-		if (pCurr->pDown){
-			TTextLink* p1 = pCurr->pDown;
-			TTextLink* p2 = p1->pNext;
-			pCurr->pDown = p2;
 		}
 }
 
@@ -227,20 +213,10 @@ void TText::DelNextLine(){
 	if (pCurr)
 		if (pCurr->pNext){
 			TTextLink *p = pCurr->pNext;
-			pCurr->pNext = pCurr->pNext->pNext;
+			pCurr->pNext = p->pNext;
 			delete p;
 		}
 }
-
-void TText::DelNextSection(){
-	if (pCurr)
-		if (pCurr->pNext){
-			TTextLink* p1 = pCurr->pDown;
-			TTextLink* p2 = p1->pNext;
-			pCurr->pNext = p2;
-		}
-}
-
 
 TTextLink* TText::ReadRec(ifstream& ifs) {
 	char _str[81];
@@ -250,11 +226,9 @@ TTextLink* TText::ReadRec(ifstream& ifs) {
 	while (!ifs.eof()) {
 		ifs.getline(_str, 80, '\n');
 		if (_str[0] == '}') {
-			Stack.Pop();
 			break;
 		}
 		if (_str[0] == '{') { 
-			Stack.Push(p);
 			p->pDown = ReadRec(ifs); 	
 		}
 		else {
@@ -279,7 +253,7 @@ void TText::Read(string ifs){
 void TText::PrintSection(TTextLink *p){
 	if (p){
 		string s;
-		int n = Stack.getsize();
+		int n = Stack.getsize()-1;
 		for (int i = 0; i <= n; i++) {
 			s += '	';
 		}
@@ -294,7 +268,10 @@ void TText::PrintSection(TTextLink *p){
 	}
 }
 
-void TText::PrintText() { PrintSection(pFirst); }
+void TText::PrintText(){
+	Stack.Clear();
+	PrintSection(pFirst);		
+}
 
 void TText::SaveSection(TTextLink *p, ofstream& ofs){
 	if (p){
@@ -314,18 +291,23 @@ void TText::SaveText(string ifs){
 }
 
 
-void TTextLink::MemCleaner(TText &txt) {
-	string s = "&&&";
+void TTextLink::MemCleaner(TText &txt, int &c) {
+	c = 0;
 	for (txt.Reset(); !txt.IsEnd(); txt.GoNext()) {
+		string s = "&&&";
 		s += txt.GetLine();
 		txt.SetLine(s.c_str());
 	}
+
 	for (TTextLink *tmp = MemHeader.pFree; tmp; tmp = tmp->pNext) {
 		strcpy_s(tmp->str, "&&&");
 	}
 	for (TTextLink *tmp = MemHeader.pFirst; tmp <= MemHeader.pLast; tmp++) {
 		if (strstr(tmp->str, "&&&"))
 			strcpy_s(tmp->str, tmp->str + 3);
-		else delete tmp;
+		else { 
+			delete tmp; 
+			c++;
+		}
 	}
 }
